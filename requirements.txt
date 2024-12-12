@@ -1,0 +1,45 @@
+# Imports
+
+pygame pip3 install pygame
+Flask pip3 install flask
+
+
+================================================================================
+
+########## Arrumar para que o arquivo main.py seja executado quando dar boot no raspberry
+
+#### 1 - Passos para Configurar o Boot do main.py
+# Criar o arquivo de serviço systemd: Crie um arquivo de serviço que vai garantir que o main.py seja executado na inicialização do Raspberry Pi.
+
+# Acesse o diretório /etc/systemd/system/:
+# No bash
+sudo nano /etc/systemd/system/controle_robo.service
+
+
+# Adicione o seguinte conteúdo:
+# No ini
+[Unit]
+Description=Inicia o controle do robô
+After=multi-user.target
+
+[Service]
+ExecStart=/usr/bin/python3 /caminho/para/seu/script/main.py
+WorkingDirectory=/caminho/para/seu/script
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi  # ou outro usuário se necessário
+Group=pi  # ou outro grupo se necessário
+
+[Install]
+WantedBy=multi-user.target
+Certifique-se de substituir /caminho/para/seu/script pelo caminho real onde está o seu arquivo main.py.
+
+#### 2 - Ativar o serviço: Após criar o arquivo de serviço, ative-o para que o main.py seja executado no boot:
+
+# No bash
+sudo systemctl daemon-reload
+sudo systemctl enable controle_robo.service
+sudo systemctl start controle_robo.service
+
+=======================================================================================
