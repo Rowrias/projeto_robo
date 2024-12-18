@@ -1,13 +1,18 @@
+import time
 import pygame
 from pygame.locals import *
 
+from componentes import robo
+
 class ControlePS5:
-    def __init__(self):
+    def __init__(self, robo):
         pygame.init()
         pygame.joystick.init()
 
         self.joystick = None
         self.conectado = False
+        self.controle_ativo = False  # Define o estado inicial do controle ps5 como desconectado
+        self.robo = robo
 
         self.mapeamento = { # Mapeamento dos botões e eixos
             "botoes": {
@@ -52,14 +57,9 @@ class ControlePS5:
 
     def conectar(self):
         """
-        Conecta o joystick ao sistema. Reinicia a configuração caso seja reconectado.
+        Conecta o joystick ao sistema. 
+        Reinicia a configuração caso seja reconectado.
         """
-
-        # Verifica e inicializa o Pygame caso necessário
-        if not pygame.get_init():
-            pygame.init()  # Inicializa o Pygame novamente
-            print("Pygame reiniciado.")
-
         pygame.joystick.quit()  # Finaliza qualquer joystick ativo
         pygame.joystick.init()  # Reinicia o subsistema de joystick
 
@@ -67,17 +67,16 @@ class ControlePS5:
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
             self.conectado = True
-            pygame.event.pump()  # Limpa eventos antigos do pygame
             print(f"Controle {self.joystick.get_name()} conectado.")
-
         else:
             self.conectado = False
             print("Nenhum controle conectado.")
 
 
-    def ler_eventos(self):
+    def ler_comandos(self):
         """
-        Captura os eventos do controle e retorna uma lista de ações correspondentes aos botões ou eixos.
+        Captura os eventos do controle e retorna uma lista de ações 
+        correspondentes aos botões ou eixos.
         """
         if not self.conectado:
             return []
@@ -109,21 +108,119 @@ class ControlePS5:
                             if not self.eixo_estado[nome_eixo]:
                                self.eixo_estado[nome_eixo] = True
                             # Imprime os valores dos eixos
-                            # print(f"Eixo acima do dead zone =")
+                            # print("Eixo acima do dead zone = Ativado")
                             print(f"EIXO {nome_eixo}: {axis_value}")
 
                         if abs(axis_value) <= self.dead_zone_positive and self.eixo_estado.get(nome_eixo):
                             # Se o eixo estiver no "neutro" e estava ativado, desativa o movimento
                             self.eixo_estado[nome_eixo] = False
                             # Imprime os valores dos eixos
-                            print(f"Eixo abaixo do dead zone = Desativado")
+                            print("Eixo abaixo do dead zone = Desativado")
                             
         except pygame.error as e:
             print(f"Erro ao processar eventos: {e}")
             self.desconectar()
 
         return comandos
+    
+    def comandos(self):
+        comando_lidos = self.ler_comandos()
 
+        for comando_lido in comando_lidos: # Processa os eventos lidos
+                print(f"* {comando_lido}")
+
+                # Alterna o controle 'ativo' ou 'inativo'
+                if comando_lido == 'BOTAO PRESSIONADO: SELECT':
+                    self.controle_ativo = not self.controle_ativo
+                    estado = "ativo" if self.controle_ativo else "inativo"
+                    print(f"Controle alternado para estado: {estado}.")
+                    continue # Volta para o início do loop
+
+                # Controle do robô SOMENTE se o controle estiver ativo
+                if self.controle_ativo:
+
+                    # Eixos do controle analogico esquerdo
+                    if 'EIXO HORIZONTAL ESQUERDO' in comando_lido:
+                        axis_value = float(comando_lido.split(":")[1].strip())
+                        if axis_value < self.analogico_ativacao_negative:
+                            self.robo.virar_para_esquerda()
+                        elif axis_value > self.analogico_ativacao_positive:
+                            self.robo.virar_para_direita()
+
+                    elif 'EIXO VERTICAL   ESQUERDO' in comando_lido:
+                        axis_value = float(comando_lido.split(":")[1].strip())
+                        if axis_value < self.analogico_ativacao_negative:
+                            self.robo.mover_para_frente()
+                        elif axis_value > self.analogico_ativacao_positive:
+                            self.robo.mover_para_tras()
+
+                    # Eixos do controle analogico direito
+                    elif 'EIXO HORIZONTAL DIREITO' in comando_lido:
+                        axis_value = float(comando_lido.split(":")[1].strip())
+                        if axis_value < self.analogico_ativacao_negative:
+                            print("Movimento no eixo horizontal direito detectado, mas sem ação definida.")
+                        elif axis_value > self.analogico_ativacao_positive:
+                            print("Movimento no eixo horizontal direito detectado, mas sem ação definida.")
+
+                    elif 'EIXO VERTICAL   DIREITO' in comando_lido:
+                        axis_value = float(comando_lido.split(":")[1].strip())
+                        if axis_value < self.analogico_ativacao_negative:
+                            print("Movimento no eixo vertical direito detectado, mas sem ação definida.")
+                        elif axis_value > self.analogico_ativacao_positive:
+                            print("Movimento no eixo vertical direito detectado, mas sem ação definida.")
+                    
+                    
+                    # Botão do controle
+                    elif comando_lido == 'BOTAO PRESSIONADO: XIS':
+                        print("Botão XIS pressionado, mas sem ação definida.")
+                    elif comando_lido == 'BOTAO PRESSIONADO: BOLA':
+                        print("Botão BOLA pressionado, mas sem ação definida.")
+                    elif comando_lido == 'BOTAO PRESSIONADO: QUADRADO':
+                        print("Botão QUADRADO pressionado, mas sem ação definida.")
+                    elif comando_lido == 'BOTAO PRESSIONADO: TRIANGULO':
+                        print("Botão TRIANGULO pressionado, mas sem ação definida.")
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: PLAYSTATION':
+                        self.desconectar() # Desconecta o controle
+                        print("Controle desconectado.")
+                        print("...")
+                        time.sleep(2)
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: START': # Finalizar programa 
+                        print("Finalizando execução do robô.")
+                        break # Encerra o Loop
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: L3':
+                        print("Botão L3 pressionado, mas sem ação definida.")
+                    elif comando_lido == 'BOTAO PRESSIONADO: R3':
+                        print("Botão R3 pressionado, mas sem ação definida.")
+                    elif comando_lido == 'BOTAO PRESSIONADO: L1':
+                        print("Botão L1 pressionado, mas sem ação definida.")
+                    elif comando_lido == 'BOTAO PRESSIONADO: R1':
+                        print("Botão R1 pressionado, mas sem ação definida.")
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: SETA CIMA':
+                        self.robo.mover_para_frente()  # Inicia o movimento
+                    elif comando_lido == 'BOTAO SOLTO: SETA CIMA':
+                        self.robo.parar()  # Para o movimento
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: SETA BAIXO':
+                        self.robo.mover_para_tras()  # Inicia o movimento
+                    elif comando_lido == 'BOTAO SOLTO: SETA BAIXO':
+                        self.robo.parar()  # Para o movimento
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: SETA ESQUERDA':
+                        self.robo.virar_para_esquerda()  # Inicia o movimento
+                    elif comando_lido == 'BOTAO SOLTO: SETA ESQUERDA':
+                        self.robo.parar()  # Para o movimento
+
+                    elif comando_lido == 'BOTAO PRESSIONADO: SETA DIREITA':
+                        self.robo.virar_para_direita()  # Inicia o movimento
+                    elif comando_lido == 'BOTAO SOLTO: SETA DIREITA':
+                        self.robo.parar()  # Para o movimento
+
+                time.sleep(0.1)  # Pequeno intervalo no loop para reduzir uso da CPU
+    
     def desconectar(self):
         pygame.quit() # Encerra o pygame
         self.joystick = None # desliga o controle
