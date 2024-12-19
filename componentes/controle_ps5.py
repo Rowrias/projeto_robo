@@ -63,6 +63,13 @@ class ControlePS5:
         pygame.joystick.quit()  # Finaliza qualquer joystick ativo
         pygame.joystick.init()  # Reinicia o subsistema de joystick
 
+         # Verifica e inicializa o Pygame caso necessário
+        if not pygame.get_init():
+            pygame.init()  # Inicializa o Pygame novamente
+            print("Pygame reiniciado.")
+
+        pygame.joystick.quit()  # Finaliza qualquer joystick ativo
+        pygame.joystick.init()  # Reinicia o subsistema de joystick
         if pygame.joystick.get_count() > 0:  # Verifica se há joysticks conectados
             self.joystick = pygame.joystick.Joystick(0)
             self.joystick.init()
