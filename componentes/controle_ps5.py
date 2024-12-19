@@ -43,9 +43,9 @@ class ControlePS5:
         }
 
         # Limiar de ativação e desativação (quando o movimento é considerado significativo)
-        self.analogico_ativacao_positive = 0.3     # Valor para considerar um movimento significativo
-        self.analogico_ativacao_negative = -0.3    # Valor para considerar um movimento significativo
-        self.dead_zone_positive = 0.1       # Valor para considerar o eixo neutro (quando ele deve parar)
+        self.dead_zone = 0.2                                    # Valor para considerar o eixo neutro (quando ele deve parar)
+        self.analogico_ativacao_positive = self.dead_zone       # Valor para considerar um movimento significativo
+        self.analogico_ativacao_negative = 0 - self.dead_zone   # Valor para considerar um movimento significativo
 
         self.eixo_estado = {  # Estado do eixo para saber se está em movimento ou não
             "HORIZONTAL ESQUERDO": False,
@@ -102,25 +102,51 @@ class ControlePS5:
                         nome_botao = self.mapeamento["botoes"].get(botao, f"BOTAO {botao}")
                         comandos.append(f"BOTAO SOLTO: {nome_botao}")
 
-                    elif event.type == JOYAXISMOTION:  # Movimento dos eixos
-                        eixo = event.axis
-                        axis_value = round(self.joystick.get_axis(eixo), 2)  # Arredonda para 2 casas
+                    elif event.type == JOYAXISMOTION:
+                        pygame.event.pump()
+                        for i in range(self.joystick.get_numaxes()):
+                            nome_eixo = self.mapeamento["eixos"].get(i, f"EIXO {i}")
+                            axis_value = round(self.joystick.get_axis(i), 1)
 
-                        nome_eixo = self.mapeamento["eixos"].get(eixo, f"EIXO {eixo}")                        
-                        if abs(axis_value) > self.analogico_ativacao_positive or abs(axis_value) < self.analogico_ativacao_negative:  # Se o valor for grande o suficiente
-                            # Ativa o movimento no eixo
-                            if not self.eixo_estado[nome_eixo]:
-                               self.eixo_estado[nome_eixo] = True
-                            # Imprime os valores dos eixos
-                            # print("Eixo acima do dead zone = Ativado")
-                            print(f"EIXO {nome_eixo}: {axis_value}")
+                            if abs(axis_value) > self.analogico_ativacao_positive or abs(axis_value) < self.analogico_ativacao_negative:
+                                self.eixo_estado[nome_eixo] = True
+                            elif abs(axis_value) <= self.dead_zone:
+                                self.eixo_estado[nome_eixo] = False
 
-                        if abs(axis_value) <= self.dead_zone_positive and self.eixo_estado.get(nome_eixo):
-                            # Se o eixo estiver no "neutro" e estava ativado, desativa o movimento
-                            self.eixo_estado[nome_eixo] = False
-                            # Imprime os valores dos eixos
-                            print("Eixo abaixo do dead zone = Desativado")
+                            # Verificar se o eixo pertence ao analógico esquerdo
+                            if nome_eixo == "HORIZONTAL ESQUERDO" or nome_eixo == "VERTICAL ESQUERDO":
+                                horizontal_value = round(self.joystick.get_axis(0), 1)
+                                vertical_value = round(self.joystick.get_axis(1), 1)
+
+                                if abs(horizontal_value) > self.dead_zone or abs(vertical_value) > self.dead_zone:
+                                    horizontal_status = "A" if abs(horizontal_value) > self.dead_zone else "D"
+                                    vertical_status = "A" if abs(vertical_value) > self.dead_zone else "D"
+
+                                    print(f"HORIZONTAL ESQUERDO: {horizontal_value} ({horizontal_status}) | VERTICAL   ESQUERDO: {vertical_value} ({vertical_status})")
                             
+                            # Verificar se o eixo pertence ao analógico direito
+                            elif nome_eixo == "HORIZONTAL DIREITO" or nome_eixo == "VERTICAL DIREITO":
+                                horizontal_value_direito = round(self.joystick.get_axis(2), 1)
+                                vertical_value_direito = round(self.joystick.get_axis(3), 1)
+
+                                # Verifica se o valor do eixo é maior que 0.2 antes de imprimir
+                                if abs(horizontal_value_direito) > self.dead_zone or abs(vertical_value_direito) > self.dead_zone:
+                                    horizontal_status_direito = "A" if abs(horizontal_value_direito) > self.dead_zone else "D"
+                                    vertical_status_direito = "A" if abs(vertical_value_direito) > self.dead_zone else "D"
+                                    print(f"HORIZONTAL DIREITO: {horizontal_value_direito} ({horizontal_status_direito}) | VERTICAL   DIREITO: {vertical_value_direito} ({vertical_status_direito})")
+
+                            # Verificar o eixo L2
+                            elif nome_eixo == "L2":
+                                eixo_l2 = round(self.joystick.get_axis(4), 1)
+                                if abs(eixo_l2) > -1.0 and abs(eixo_l2) < 1.0:
+                                    print(f"L2: {eixo_l2}")
+
+                            # Verificar o eixo R2
+                            elif nome_eixo == "R2":
+                                eixo_r2 = round(self.joystick.get_axis(5), 1)
+                                if abs(eixo_r2) > -1.0 and abs(eixo_r2) < 1.0:
+                                    print(f"R2: {eixo_r2}")
+
         except pygame.error as e:
             print(f"Erro ao processar eventos: {e}")
             self.desconectar()
@@ -148,11 +174,11 @@ class ControlePS5:
                         vertical = float(comando_lido.split(":")[1].strip()) if 'VERTICAL   ESQUERDO' in comando_lido else 0
 
                         # Movimentos simples
-                        if vertical < -0.3:
+                        if vertical < self.analogico_ativacao_negative:
                             print("Movendo para frente.")
                             robo.mover_para_frente(velocidade=1.0)
 
-                        elif vertical > 0.3:
+                        elif vertical > self.analogico_ativacao_positive:
                             print("Movendo para trás.")
                             robo.mover_para_tras(velocidade=1.0)
 
