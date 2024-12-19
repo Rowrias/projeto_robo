@@ -46,7 +46,6 @@ class ControlePS5:
         self.analogico_ativacao_positive = 0.3     # Valor para considerar um movimento significativo
         self.analogico_ativacao_negative = -0.3    # Valor para considerar um movimento significativo
         self.dead_zone_positive = 0.1       # Valor para considerar o eixo neutro (quando ele deve parar)
-        self.dead_zone_negative = -0.1      # Valor para considerar o eixo neutro (quando ele deve parar)
 
         self.eixo_estado = {  # Estado do eixo para saber se está em movimento ou não
             "HORIZONTAL ESQUERDO": False,
@@ -89,7 +88,6 @@ class ControlePS5:
             return []
         
         comandos = []
-
         try:
         # Certifique-se de que o pygame esteja inicializado antes de capturar eventos
             if pygame.get_init():
@@ -108,8 +106,7 @@ class ControlePS5:
                         eixo = event.axis
                         axis_value = round(self.joystick.get_axis(eixo), 2)  # Arredonda para 2 casas
 
-                        nome_eixo = self.mapeamento["eixos"].get(eixo, f"EIXO {eixo}")
-                        
+                        nome_eixo = self.mapeamento["eixos"].get(eixo, f"EIXO {eixo}")                        
                         if abs(axis_value) > self.analogico_ativacao_positive or abs(axis_value) < self.analogico_ativacao_negative:  # Se o valor for grande o suficiente
                             # Ativa o movimento no eixo
                             if not self.eixo_estado[nome_eixo]:
@@ -132,7 +129,6 @@ class ControlePS5:
     
     def comandos(self):
         comando_lidos = self.ler_comandos()
-
         for comando_lido in comando_lidos: # Processa os eventos lidos
                 print(f"* {comando_lido}")
 
@@ -147,19 +143,54 @@ class ControlePS5:
                 if self.controle_ativo:
 
                     # Eixos do controle analogico esquerdo
-                    if 'EIXO HORIZONTAL ESQUERDO' in comando_lido:
-                        axis_value = float(comando_lido.split(":")[1].strip())
-                        if axis_value < self.analogico_ativacao_negative:
-                            self.robo.virar_para_esquerda()
-                        elif axis_value > self.analogico_ativacao_positive:
-                            self.robo.virar_para_direita()
+                    if 'EIXO HORIZONTAL ESQUERDO' in comando_lido or 'EIXO VERTICAL   ESQUERDO' in comando_lido:
+                        horizontal = float(comando_lido.split(":")[1].strip()) if 'HORIZONTAL ESQUERDO' in comando_lido else 0
+                        vertical = float(comando_lido.split(":")[1].strip()) if 'VERTICAL   ESQUERDO' in comando_lido else 0
 
-                    elif 'EIXO VERTICAL   ESQUERDO' in comando_lido:
-                        axis_value = float(comando_lido.split(":")[1].strip())
-                        if axis_value < self.analogico_ativacao_negative:
-                            self.robo.mover_para_frente()
-                        elif axis_value > self.analogico_ativacao_positive:
-                            self.robo.mover_para_tras()
+                        # Movimentos simples
+                        if vertical < -0.3:
+                            print("Movendo para frente.")
+                            robo.mover_para_frente(velocidade=1.0)
+
+                        elif vertical > 0.3:
+                            print("Movendo para trás.")
+                            robo.mover_para_tras(velocidade=1.0)
+
+                        elif horizontal < -0.3:
+                            print("Virando para esquerda.")
+                            robo.virar_para_esquerda(velocidade=1.0)
+
+                        elif horizontal > 0.3:
+                            print("Virando para direita.")
+                            robo.virar_para_direita(velocidade=1.0)
+                        
+                        # Movimento em diagonal para frente
+                        elif vertical < -0.3 and horizontal < -0.3:
+                            print("Movendo para frente e esquerda (diagonal).")
+                            robo.mover_para_frente(velocidade=0.7)
+                            robo.virar_para_esquerda(velocidade=0.7)
+
+                        elif vertical < -0.3 and horizontal > 0.3:
+                            print("Movendo para frente e direita (diagonal).")
+                            robo.mover_para_frente(velocidade=0.7)
+                            robo.virar_para_direita(velocidade=0.7)
+
+                        # Movimento em diagonal para trás
+                        elif vertical > 0.3 and horizontal < -0.3:
+                            print("Movendo para trás e esquerda (diagonal).")
+                            robo.mover_para_tras(velocidade=0.7)
+                            robo.virar_para_esquerda(velocidade=0.7)
+
+                        elif vertical > 0.3 and horizontal > 0.3:
+                            print("Movendo para trás e direita (diagonal).")
+                            robo.mover_para_tras(velocidade=0.7)
+                            robo.virar_para_direita(velocidade=0.7)
+
+                        # Parada do movimento
+                        else:
+                            print("Parando o movimento.")
+                            robo.parar()
+
 
                     # Eixos do controle analogico direito
                     elif 'EIXO HORIZONTAL DIREITO' in comando_lido:
