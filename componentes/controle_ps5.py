@@ -169,73 +169,11 @@ class ControlePS5:
                 if self.controle_ativo:
 
                     # Eixos do controle analogico esquerdo
-                    if 'EIXO HORIZONTAL ESQUERDO' in comando_lido or 'EIXO VERTICAL   ESQUERDO' in comando_lido:
-                        horizontal = float(comando_lido.split(":")[1].strip()) if 'HORIZONTAL ESQUERDO' in comando_lido else 0
-                        vertical = float(comando_lido.split(":")[1].strip()) if 'VERTICAL   ESQUERDO' in comando_lido else 0
+                    if comando_lido == 'HORIZONTAL ESQUERDO: -0.0 (D) | VERTICAL   ESQUERDO: -0.3 (A)':
+                        self.robo.virar_para_esquerda()  # Inicia o movimento
 
-                        # Movimentos simples
-                        if vertical < self.analogico_ativacao_negative:
-                            print("Movendo para frente.")
-                            robo.mover_para_frente(velocidade=1.0)
-
-                        elif vertical > self.analogico_ativacao_positive:
-                            print("Movendo para trás.")
-                            robo.mover_para_tras(velocidade=1.0)
-
-                        elif horizontal < -0.3:
-                            print("Virando para esquerda.")
-                            robo.virar_para_esquerda(velocidade=1.0)
-
-                        elif horizontal > 0.3:
-                            print("Virando para direita.")
-                            robo.virar_para_direita(velocidade=1.0)
-                        
-                        # Movimento em diagonal para frente
-                        elif vertical < -0.3 and horizontal < -0.3:
-                            print("Movendo para frente e esquerda (diagonal).")
-                            robo.mover_para_frente(velocidade=0.7)
-                            robo.virar_para_esquerda(velocidade=0.7)
-
-                        elif vertical < -0.3 and horizontal > 0.3:
-                            print("Movendo para frente e direita (diagonal).")
-                            robo.mover_para_frente(velocidade=0.7)
-                            robo.virar_para_direita(velocidade=0.7)
-
-                        # Movimento em diagonal para trás
-                        elif vertical > 0.3 and horizontal < -0.3:
-                            print("Movendo para trás e esquerda (diagonal).")
-                            robo.mover_para_tras(velocidade=0.7)
-                            robo.virar_para_esquerda(velocidade=0.7)
-
-                        elif vertical > 0.3 and horizontal > 0.3:
-                            print("Movendo para trás e direita (diagonal).")
-                            robo.mover_para_tras(velocidade=0.7)
-                            robo.virar_para_direita(velocidade=0.7)
-
-                        # Parada do movimento
-                        else:
-                            print("Parando o movimento.")
-                            robo.parar()
-
-
-                    # Eixos do controle analogico direito
-                    elif 'EIXO HORIZONTAL DIREITO' in comando_lido:
-                        axis_value = float(comando_lido.split(":")[1].strip())
-                        if axis_value < self.analogico_ativacao_negative:
-                            print("Movimento no eixo horizontal direito detectado, mas sem ação definida.")
-                        elif axis_value > self.analogico_ativacao_positive:
-                            print("Movimento no eixo horizontal direito detectado, mas sem ação definida.")
-
-                    elif 'EIXO VERTICAL   DIREITO' in comando_lido:
-                        axis_value = float(comando_lido.split(":")[1].strip())
-                        if axis_value < self.analogico_ativacao_negative:
-                            print("Movimento no eixo vertical direito detectado, mas sem ação definida.")
-                        elif axis_value > self.analogico_ativacao_positive:
-                            print("Movimento no eixo vertical direito detectado, mas sem ação definida.")
-                    
-                    
                     # Botão do controle
-                    elif comando_lido == 'BOTAO PRESSIONADO: XIS':
+                    if comando_lido == 'BOTAO PRESSIONADO: XIS':
                         print("Botão XIS pressionado, mas sem ação definida.")
                     elif comando_lido == 'BOTAO PRESSIONADO: BOLA':
                         print("Botão BOLA pressionado, mas sem ação definida.")
